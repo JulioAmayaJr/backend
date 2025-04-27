@@ -23,25 +23,20 @@ jobs:
         run: |
           git remote add upstream https://github.com/ghost1999dev/backend-auction.git
           git fetch upstream
-      
-      - name: Verificar si hay cambios
-        id: check_changes
-        run: |
-          git checkout -b temp-branch upstream/developer
-          DIFF=$(git diff main..temp-branch)
-          if [ -n "$DIFF" ]; then
-            echo "changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "changes=false" >> $GITHUB_OUTPUT
-          fi
           
       - name: Merge de la rama developer remota a main local
-        if: steps.check_changes.outputs.changes == 'true'
         run: |
           git checkout main
-          git merge upstream/developer --no-ff -m "Auto-merge de la rama developer remota a main"
+          git merge upstream/developer --allow-unrelated-histories --no-ff -m "Auto-merge de la rama developer remota a main"
+        continue-on-error: true
+      
+      - name: Resolver conflictos si existen
+        run: |
+          if git status | grep "both modified"; then
+            echo "Hay conflictos que deben resolverse manualmente"
+            exit 1
+          fi
       
       - name: Push de los cambios
-        if: steps.check_changes.outputs.changes == 'true'
         run: |
           git push origin main
