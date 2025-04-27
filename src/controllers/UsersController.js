@@ -76,6 +76,11 @@ export const createUser = async (req, res) => {
             user,
           });
       }
+      else if (response.status === 400) {
+        return res
+          .status(400)
+          .json({ message: "Verification code is expired or incorrect" });
+      }
   } catch (error) {
     res
       .status(500)
