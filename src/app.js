@@ -20,7 +20,7 @@ import "./middlewares/jwt.js";
 import indexRoutes from "./routes/indexRoutes.js";
 import UserRoutes from "./routes/userRoutes.js";
 import CompanyRoutes from "./routes/companyRoutes.js";
-import DeveloperRoutes from "./routes/developerRoutes.js";
+import DeveloperRoutes from "./routes/developerRoutes.js"
 import categoryRoutes from "./routes/categoryRoutes.js";
 import {loginRouter} from "./routes/authRoutes.js";
 
@@ -29,6 +29,10 @@ import { jwtRouter } from "./routes/jwtAuthRoutes.js";
 import sequelize from "./config/connection.js";
 import ProjectRoutes from "./routes/projectsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import DeveloperRoutes from "./routes/developerRoutes.js";
+
+//////NUEVAS FUNCIONES
+import { jwtRouter } from "./routes/jwtAuthRoutes.js";
 
 config();
 const app = express();
