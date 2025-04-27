@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.PAT }}  # Usa tu PAT en lugar de GITHUB_TOKEN
+          token: ${{ secrets.PAT }}
       
       - name: Configurar Git
         run: |
@@ -23,19 +23,45 @@ jobs:
         run: |
           git remote add upstream https://github.com/ghost1999dev/backend-auction.git
           git fetch upstream
-          
-      - name: Merge de la rama developer remota a main local
+      
+      - name: Intentar merge automático
+        id: merge_attempt
         run: |
           git checkout main
-          git merge upstream/developer --allow-unrelated-histories --no-ff -m "Auto-merge de la rama developer remota a main"
-        continue-on-error: true
-      
-      - name: Resolver conflictos si existen
-        run: |
-          if git status | grep "both modified"; then
-            echo "Hay conflictos que deben resolverse manualmente"
-            exit 1
+          # Primero intentamos un merge normal
+          if git merge upstream/developer --allow-unrelated-histories --no-ff -m "Auto-merge de la rama developer remota a main"; then
+            echo "merge_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "merge_status=conflict" >> $GITHUB_OUTPUT
+            # Abortar el merge fallido para limpiar el estado
+            git merge --abort
           fi
+      
+      - name: Estrategia alternativa - Copiar archivos nuevos
+        if: steps.merge_attempt.outputs.merge_status == 'conflict'
+        run: |
+          # Checkout a una rama temporal basada en upstream/developer
+          git checkout -b temp_branch upstream/developer
+          
+          # Crear directorio para guardar los archivos
+          mkdir -p /tmp/upstream_files
+          
+          # Copiar todos los archivos excepto .git
+          rsync -av --exclude='.git' ./ /tmp/upstream_files/
+          
+          # Volver a nuestra rama main
+          git checkout main
+          
+          # Copiar los archivos de upstream/developer a main
+          rsync -av --exclude='.git' /tmp/upstream_files/ ./
+          
+          # Añadir todos los cambios
+          git add .
+          
+          # Commit con mensaje informativo
+          git commit -m "Sync: Copiando archivos de upstream/developer a main manualmente"
+          
+          echo "Nota: Se realizó una copia manual de archivos debido a conflictos de merge."
       
       - name: Push de los cambios
         run: |
