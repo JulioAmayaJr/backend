@@ -20,7 +20,7 @@ import "./middlewares/jwt.js";
 import indexRoutes from "./routes/indexRoutes.js";
 import UserRoutes from "./routes/userRoutes.js";
 import CompanyRoutes from "./routes/companyRoutes.js";
-import DeveloperRoutes from "./routes/developerRoutes.js";
+import DeveloperRoutes from "./routes/developerRoutes.js"
 import categoryRoutes from "./routes/categoryRoutes.js";
 import {loginRouter} from "./routes/authRoutes.js";
 
