@@ -1,8 +1,8 @@
 name: Sync Developer to Main
 on:
-  schedule:
-    - cron: '*/30 * * * *'  # Se ejecuta cada 30 minutos
-  workflow_dispatch:  # Permite ejecutar el workflow manualmente
+  workflow_dispatch:  # Allows manual triggering
+  repository_dispatch:
+    types: [developer_updated]  # Custom webhook event
 
 jobs:
   sync-branches:
@@ -14,58 +14,58 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT }}
       
-      - name: Configurar Git
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       
-      - name: Fetch del repositorio remoto
+      - name: Fetch remote repository
         run: |
           git remote add upstream https://github.com/ghost1999dev/backend-auction.git
           git fetch upstream
       
-      - name: Intentar merge automático
+      - name: Attempt automatic merge
         id: merge_attempt
         run: |
           git checkout main
-          # Primero intentamos un merge normal
-          if git merge upstream/developer --allow-unrelated-histories --no-ff -m "Auto-merge de la rama developer remota a main"; then
+          # First try a normal merge
+          if git merge upstream/developer --allow-unrelated-histories --no-ff -m "Auto-merge from remote developer branch to main"; then
             echo "merge_status=success" >> $GITHUB_OUTPUT
           else
             echo "merge_status=conflict" >> $GITHUB_OUTPUT
-            # Abortar el merge fallido para limpiar el estado
+            # Abort the failed merge to clean up the state
             git merge --abort
           fi
       
-      - name: Estrategia alternativa - Copiar archivos nuevos
+      - name: Alternative strategy - Copy new files
         if: steps.merge_attempt.outputs.merge_status == 'conflict'
         run: |
-          # Checkout a una rama temporal basada en upstream/developer
+          # Checkout a temporary branch based on upstream/developer
           git checkout -b temp_branch upstream/developer
           
-          # Crear directorio para guardar los archivos
+          # Create directory to store files
           mkdir -p /tmp/upstream_files
           
-          # Copiar todos los archivos excepto .git
+          # Copy all files except .git
           rsync -av --exclude='.git' ./ /tmp/upstream_files/
           
-          # Volver a nuestra rama main
+          # Return to main branch
           git checkout main
           
-          # Copiar los archivos de upstream/developer a main
+          # Copy files from upstream/developer to main
           rsync -av --exclude='.git' /tmp/upstream_files/ ./
           
-          # Añadir todos los cambios
+          # Add all changes
           git add .
           
-          # Commit con mensaje informativo
-          git commit -m "Sync: Copiando archivos de upstream/developer a main manualmente"
+          # Commit with informative message
+          git commit -m "Sync: Manually copying files from upstream/developer to main due to merge conflicts"
           
-          echo "Nota: Se realizó una copia manual de archivos debido a conflictos de merge."
+          echo "Note: Manual file copy was performed due to merge conflicts."
       
-      - name: Push de los cambios
+      - name: Push changes
         run: |
-          # Usar el PAT explícitamente en el URL para asegurar permisos
+          # Use PAT explicitly in URL to ensure permissions
           remote_url="https://${{ secrets.PAT }}@github.com/JulioAmayaJr/backend.git"
           git remote set-url origin "$remote_url"
           git push origin main
